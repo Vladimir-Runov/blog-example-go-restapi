@@ -1,6 +1,6 @@
 # Blog API - Шаблон проектной работы
 
-## Описание проекта
+## Описание проекта (blog-api)
 
 Вам необходимо реализовать REST API для блога с функциональностью:
 - Аутентификация пользователей (JWT)
@@ -41,9 +41,10 @@ cd my-blog-api
 
 # Установить зависимости
 go mod download
+go mod tidy
 
 # Создать файл конфигурации
-cp .env.example .env
+copy .env.example .env
 
 # Запустить PostgreSQL
 docker-compose up -d

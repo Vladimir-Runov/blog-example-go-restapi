@@ -14,6 +14,25 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// UserResponse - структура для ответа с данными пользователя (без пароля)
+// Поля: ID, Username, Email, CreatedAt
+type UserResponse struct {
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// ToResponse преобразует User в UserResponse
+func (u *User) ToResponse() UserResponse {
+	return UserResponse{
+		ID:        u.ID,
+		Username:  u.Username,
+		Email:     u.Email,
+		CreatedAt: u.CreatedAt,
+	}
+}
+
 // Post представляет модель поста в блоге
 type Post struct {
 	ID        int       `json:"id" db:"id"`
@@ -24,6 +43,27 @@ type Post struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// PostResponse - структура для ответа с данными поста
+// Поля: ID, Title, Content, Author (UserResponse), CreatedAt, UpdatedAt
+type PostResponse struct {
+	ID        int          `json:"id"`
+	Title     string       `json:"title"`
+	Content   string       `json:"content"`
+	Author    UserResponse `json:"author"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+}
+
+// CanBeEditedBy проверяет, может ли пользователь редактировать пост
+func (p *Post) CanBeEditedBy(userID int) bool {
+	return p.AuthorID == userID
+}
+
+// CanBeDeletedBy проверяет, может ли пользователь удалить пост
+func (p *Post) CanBeDeletedBy(userID int) bool {
+	return p.AuthorID == userID
+}
+
 // Comment представляет модель комментария к посту
 type Comment struct {
 	ID        int       `json:"id" db:"id"`
@@ -32,6 +72,26 @@ type Comment struct {
 	AuthorID  int       `json:"author_id" db:"author_id"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// CommentResponse - структура для ответа с данными комментария
+type CommentResponse struct {
+	ID        int          `json:"id"`
+	Content   string       `json:"content"`
+	PostID    int          `json:"post_id"`
+	Author    UserResponse `json:"author"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+}
+
+// CanBeEditedBy проверяет, может ли пользователь редактировать комментарий
+func (c *Comment) CanBeEditedBy(userID int) bool {
+	return c.AuthorID == userID
+}
+
+// CanBeDeletedBy проверяет, может ли пользователь удалить комментарий
+func (c *Comment) CanBeDeletedBy(userID int) bool {
+	return c.AuthorID == userID
 }
 
 // UserCreateRequest представляет запрос на создание пользователя
@@ -66,29 +126,22 @@ type CommentCreateRequest struct {
 
 // TODO: Добавить следующие структуры и методы:
 
-// UserResponse - структура для ответа с данными пользователя (без пароля)
-// Поля: ID, Username, Email, CreatedAt
-
 // TokenResponse - структура для ответа с JWT токеном
 // Поля: Token (string), ExpiresAt (time.Time), User (UserResponse)
-
-// PostResponse - структура для ответа с данными поста
-// Поля: ID, Title, Content, Author (UserResponse), CreatedAt, UpdatedAt
+type TokenResponse struct {
+	Token     string       `json:"token"`
+	ExpiresAt time.Time    `json:"expires_at"`
+	User      UserResponse `json:"user"`
+}
 
 // CommentResponse - структура для ответа с данными комментария
 // Поля: ID, Content, PostID, Author (UserResponse), CreatedAt, UpdatedAt
 
 // TODO: Реализовать методы для моделей:
-
 // User.ToResponse() UserResponse - преобразует User в UserResponse
 
 // Post.CanBeEditedBy(userID int) bool - проверяет, может ли пользователь редактировать пост
-
 // Post.CanBeDeletedBy(userID int) bool - проверяет, может ли пользователь удалить пост
-
-// Comment.CanBeEditedBy(userID int) bool - проверяет, может ли пользователь редактировать комментарий
-
-// Comment.CanBeDeletedBy(userID int) bool - проверяет, может ли пользователь удалить комментарий
 
 // HINT: Пользователь может редактировать/удалять только свои посты и комментарии
 // (сравните AuthorID с переданным userID)
