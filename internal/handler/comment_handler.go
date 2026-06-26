@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type CommentHandler struct {
@@ -126,10 +127,22 @@ func (h *CommentHandler) GetByPost(w http.ResponseWriter, r *http.Request) {
 	// Пример парсинга:
 	// - убрать префикс "/api/posts/"
 	// - взять часть до "/comments"
-	idStr := extractPostIDFromCommentsPath(path)
-	postID, err := strconv.Atoi(idStr)
+
+	//	idStr := extractPostIDFromCommentsPath(path)
+	//	postID, err := strconv.Atoi(idStr)
+	//	if err != nil {
+	//		writeError(w, "Invalid post ID", http.StatusBadRequest)
+	//		return
+	//	}
+	// Убираем префикс "/api/posts/"
+	postIDStr := strings.TrimPrefix(path, "/api/posts/")
+	// Берем часть до "/comments"
+	postIDStr = strings.TrimSuffix(postIDStr, "/comments")
+
+	// Преобразуем ID поста в int
+	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
-		writeError(w, "Invalid post ID", http.StatusBadRequest)
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}
 

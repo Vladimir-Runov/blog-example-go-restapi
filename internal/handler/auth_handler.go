@@ -8,10 +8,6 @@ import (
 	"net/http"
 )
 
-type AuthHandler struct {
-	userService *service.UserService
-}
-
 // UserCreateRequest представляет тело запроса на регистрацию
 type UserCreateRequest struct {
 	Username string `json:"username"`
@@ -25,9 +21,13 @@ type UserLoginRequest struct {
 	Password string `json:"password"`
 }
 
+type AuthHandler struct {
+	userService service.UserService
+}
+
 func NewAuthHandler(userService *service.UserService) *AuthHandler {
 	return &AuthHandler{
-		userService: userService,
+		userService: *userService,
 	}
 }
 
@@ -50,14 +50,16 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Декодировать JSON тело в UserCreateRequest
-	var userCreateReq UserCreateRequest
-	if err := json.NewDecoder(r.Body).Decode(&userCreateReq); err != nil {
+	var req UserCreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
 	// 3. Вызвать userService.Register
-	token, err := h.userService.Register(userCreateReq.Username, userCreateReq.Password, userCreateReq.Email)
+	token, err := h.userService.Register(req.Username, req.Password, req.Email)
+
+	// 4. Обработать ошибки
 	if err != nil {
 		if err == service.ErrUserAlreadyExists {
 			http.Error(w, "User already exists", http.StatusConflict)
@@ -67,12 +69,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Вернуть JSON ответ с токеном (201 Created)
+	// 5. Вернуть JSON ответ с токеном (201 Created)
 	w.WriteHeader(http.StatusCreated)
-	response := map[string]string{"token": token}
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
+
+	//	response := map[string]string{"token": token}
+	//	if err := json.NewEncoder(w).Encode(response); err != nil {
+	//		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	//	}
 
 }
 
@@ -88,6 +92,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// 5. Вернуть JSON ответ с токеном (200 OK)
 
 	//http.Error(w, "Not implemented", http.StatusNotImplemented)
+
 	// 1. Проверить метод запроса (должен быть POST)
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -95,16 +100,18 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Декодировать JSON тело в UserLoginRequest
-	var userLoginReq UserLoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&userLoginReq); err != nil {
+	var req UserLoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
 	// 3. Вызвать userService.Login
-	token, err := h.userService.Login(userLoginReq.Username, userLoginReq.Password)
+	token, err := h.userService.Login(req.Username, req.Password)
+
+	// 4. Обработать ошибки
 	if err != nil {
-		if err == service.ErrInvalidCredentials {
+		if err == services.ErrInvalidCredentials {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -112,12 +119,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Вернуть JSON ответ с токеном (200 OK)
-	response := map[string]string{"token": token.Token}
+	// 5. Вернуть JSON ответ с токеном (200 OK)
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
 // GetProfile возвращает профиль текущего пользователя (опционально)
