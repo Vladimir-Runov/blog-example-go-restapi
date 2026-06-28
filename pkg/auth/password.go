@@ -107,7 +107,7 @@ func ValidatePasswordStrength(password string) error {
 }
 
 // GenerateRandomPassword генерирует случайный пароль (опциональное задание)
-func GenerateRandomPassword(length int = 12) (string, error) {
+func GenerateRandomPassword(length int) (string, error) {
 	if length < 6 {
 		return "", errors.New("length must be at least 6")
 	}
@@ -123,10 +123,11 @@ func GenerateRandomPassword(length int = 12) (string, error) {
 
 	allChars := lettersUc + digits + lettersLc // Заполняем оставшуюся часть пароля случайными символами
 	for i := 3; i < length; i++ {
-		password[i], err1 := randInt(allChars)
+		pchr, err1 := randInt(allChars)
 		if err1 != nil {
 			return "", err1
 		}
+		password[i] = pchr
 	}
 	shuffle(password)
 	return string(password), nil

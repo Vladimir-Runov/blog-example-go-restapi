@@ -19,7 +19,6 @@ type User struct {
 }
 
 // UserResponse - структура для ответа с данными пользователя (без пароля)
-
 // Поля: ID, Username, Email, CreatedAt
 type UserResponse struct {
 	ID        int       `json:"id"`
@@ -143,8 +142,13 @@ type PostUpdateRequest struct {
 
 // CommentCreateRequest представляет запрос на создание комментария
 type CommentCreateRequest struct {
-	Content string `json:"content" validate:"required,min=1,max=1000"`
+	AuthorID int    `json:"author_id" db:"author_id"`
+	PostID   int    `json:"post_id" db:"author_id"`
+	Content  string `json:"content" validate:"required,min=1,max=1000"`
 }
-type CommentUpdateequest struct {
-	Content string `json:"content" validate:"required,min=1"`
+
+// CommentUpdateRequest представляет запрос на обновление комментария
+type CommentUpdateRequest struct {
+	CommentID int    `json:"commentId"`
+	Content   string `json:"content" validate:"required,min=1"`
 }

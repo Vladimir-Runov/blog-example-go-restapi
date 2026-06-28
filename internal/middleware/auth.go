@@ -22,7 +22,7 @@ const (
 
 // AuthMiddleware provides JWT authentication
 type AuthMiddleware struct {
-	jwt *auth.JWTManager
+	jwtManager *auth.JWTManager
 }
 
 // NewAuthMiddleware creates a new auth middleware instance
@@ -65,23 +65,23 @@ func (m *AuthMiddleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		claims, err := m.jwtManager.ValidateToken(tokenString)
 		if err != nil {
 			// 3. Обработать ошибки валидации
-			switch err.(type) {
-			case *jwt.ValidationError:
-				if err.(*jwt.ValidationError).Errors&jwt.ValidationErrorExpired != 0 {
-					http.Error(w, "Token has expired", http.StatusUnauthorized)
-				} else {
-					http.Error(w, "Invalid token", http.StatusUnauthorized)
-				}
-			default:
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			}
+			//			switch (type) {
+			//				case *jwt.ValidationError:
+			//					if err.(*jwt.ValidationError).Errors&jwt.ValidationErrorExpired != 0 {
+			//						http.Error(w, "Token has expired", http.StatusUnauthorized)
+			//					} else {
+			//						http.Error(w, "Invalid token", http.StatusUnauthorized)
+			//					}
+			//				default:
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			//			}
 			return
 		}
 
 		// 4. Добавить данные пользователя в контекст
-		ctx := context.WithValue(r.Context(), UserIDKey, claims["sub"])
-		ctx = context.WithValue(ctx, UserEmailKey, claims["email"])
-		ctx = context.WithValue(ctx, UserNameKey, claims["name"])
+		ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
+		ctx = context.WithValue(ctx, UserEmailKey, claims.Email)
+		ctx = context.WithValue(ctx, UserNameKey, claims.Username)
 		r = r.WithContext(ctx)
 
 		// 5. Передать управление следующему handler
@@ -112,9 +112,9 @@ func (m *AuthMiddleware) OptionalAuth(next http.HandlerFunc) http.HandlerFunc {
 				claims, err := m.jwtManager.ValidateToken(tokenString)
 				if err == nil {
 					// 3. Если токен валидный - добавить данные в контекст
-					ctx := context.WithValue(r.Context(), UserIDKey, claims["sub"])
-					ctx = context.WithValue(ctx, UserEmailKey, claims["email"])
-					ctx = context.WithValue(ctx, UserNameKey, claims["name"])
+					ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
+					ctx = context.WithValue(ctx, UserEmailKey, claims.Email)
+					ctx = context.WithValue(ctx, UserNameKey, claims.Username)
 					r = r.WithContext(ctx)
 				} else {
 					// Обработка ошибок валидации (необязательно)

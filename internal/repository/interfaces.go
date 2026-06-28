@@ -71,6 +71,8 @@ type CommentRepository interface {
 	GetCountByPostID(ctx context.Context, postID int) (int, error)
 
 	// TODO: Реализовать методы Update и Delete при необходимости
+	Delete(ctx context.Context, id int) error
+	Update(ctx context.Context, comment *model.Comment) error
 }
 
 // TODO: При реализации репозиториев учитывайте следующее:

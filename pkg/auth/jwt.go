@@ -18,8 +18,7 @@ type Claims struct {
 	UserID               int    `json:"user_id"`
 	Email                string `json:"email"`
 	Username             string `json:"username"`
-	jwt.RegisteredClaims        // TODO: Добавить стандартные JWT claims
-	// Подсказка: используйте jwt.RegisteredClaims или jwt.StandardClaims
+	jwt.RegisteredClaims        // TODO: Добавить стандартные JWT claims Подсказка: используйте jwt.RegisteredClaims или jwt.StandardClaims
 }
 
 // JWTManager управляет созданием и валидацией JWT токенов
@@ -40,11 +39,11 @@ func NewJWTManager(secretKey string, ttlHours int) *JWTManager {
 }
 
 // GenerateToken создает новый JWT токен для пользователя
-func (m *JWTManager) GenerateToken(userID int, email, username string) (string, time.Time, error) {
+func (m *JWTManager) GenerateToken(userID int, email string, username string) (string, time.Time, error) {
 	// TODO: Реализовать генерацию JWT токена
 	// Шаги:
 	// 1. Создать Claims с данными пользователя
-	// 2. Установить время истечения токена (текущее время + ttl)
+
 	// 3. Создать токен используя алгоритм подписи (например, HS256)
 	// 4. Подписать токен секретным ключом
 	// 5. Вернуть подписанную строку токена и время истечения
@@ -52,14 +51,14 @@ func (m *JWTManager) GenerateToken(userID int, email, username string) (string, 
 	// Подсказка: используйте библиотеку github.com/golang-jwt/jwt/v5
 	//return "", time.Time{}, errors.New("not implemented")
 
-	expirationTime := time.Now().Add(m.ttl) // Время истечения токена
+	expirationTime := time.Now().Add(m.ttl) // Установить время истечения токена (текущее время + ttl)
 	claims := Claims{
 		UserID:   userID,
 		Email:    email,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime), // Установить время истечения
-			IssuedAt:  jwt.NewNumericDate(time.Now()),     // Установить время выпуска
+			ExpiresAt: jwt.NewNumericDate(expirationTime), //  время истечения
+			IssuedAt:  jwt.NewNumericDate(time.Now()),     // время выпуска
 		},
 	}
 
@@ -144,12 +143,18 @@ func (m *JWTManager) RefreshToken(tokenString string) (string, time.Time, error)
 	// Здесь можно добавить дополнительные данные, если они есть в claims
 
 	// Шаг 3: Сгенерировать новый токен с теми же данными
-	newClaims := &Claims{
-		UserID: userID,
-		// Здесь можно добавить дополнительные поля для claims
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.tokenLifetime)), // Установка нового времени истечения
+	expirationTime := time.Now().Add(m.ttl) // Установить время истечения токена (текущее время + ttl)
+	newClaims := Claims{
+		UserID:   userID,
+		Email:    claims.Email,
+		Username: claims.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime), //  время истечения
+			IssuedAt:  jwt.NewNumericDate(time.Now()),     // время выпуска
+		},
 	}
 
+	// Шаг 3: Создать токен используя алгоритм подписи (например, HS256)
 	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
 	tokenString, err = newToken.SignedString(m.secretKey)
 	if err != nil {

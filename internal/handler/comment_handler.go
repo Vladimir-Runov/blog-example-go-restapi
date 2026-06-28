@@ -145,8 +145,6 @@ func (h *CommentHandler) GetByPost(w http.ResponseWriter, r *http.Request) {
 	postIDStr := strings.TrimPrefix(path, "/api/posts/")
 	// Берем часть до "/comments"
 	postIDStr = strings.TrimSuffix(postIDStr, "/comments")
-
-	// Преобразуем ID поста в int
 	postID, err := strconv.Atoi(postIDStr)
 	if err != nil {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
@@ -155,17 +153,17 @@ func (h *CommentHandler) GetByPost(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Извлечь параметры пагинации
 	query := r.URL.Query()
-	limit, _ := strconv.Atoi(query.Get("limit"))
-	if limit <= 0 {
+	limit, err := strconv.Atoi(query.Get("limit"))
+	if err != nil || limit <= 0 {
 		limit = 20 // значение по умолчанию
 	}
-	offset, _ := strconv.Atoi(query.Get("offset"))
-	if offset < 0 {
+	offset, err := strconv.Atoi(query.Get("offset"))
+	if err != nil || offset < 0 {
 		offset = 0
 	}
 
 	// 4. Получить комментарии через сервис
-	comments, total, err := h.commentService.GetByPost(r.Context(), postID, limit, offset)
+	comments, totalCount, err := h.commentService.GetByPost(r.Context(), postID, limit, offset)
 	if err != nil {
 		if err == service.ErrPostNotExists {
 			writeError(w, "Post not found", http.StatusNotFound)
@@ -174,22 +172,28 @@ func (h *CommentHandler) GetByPost(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	// https://github.com/Vladimir-Runov/blog-example-go-restapi/tree/main/internal/model
 	// 5. Создать ответ с метаданными
-	resp := &model.CommentResponse{
-		Comments: comments,
-		Total:    total,
-		Limit:    limit,
-		Offset:   offset,
-		PostID:   postID,
+	resp := make([]model.CommentResponse, len(comments))
+	for i, comment := range comments {
+		resp[i] = model.CommentResponse{
+			ID:      comment.ID,
+			Content: comment.Content,
+			PostID:  postID,
+			//			Author:    ,
+			CreatedAt: comment.CreatedAt,
+			UpdatedAt: comment.UpdatedAt,
+		}
 	}
 
 	// 6. Отправить ответ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
-
-	//http.Error(w, "Not implemented", http.StatusNotImplemented)
+	response := map[string]interface{}{
+		"total":    totalCount,
+		"comments": resp,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 // Update обновляет комментарий
@@ -206,36 +210,34 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Получить ID пользователя из контекста
-	userID, ok := getUserIDFromContext(r.Context())
+	userIDstr, ok := getUserIDFromContext(r.Context())
 	if !ok {
 		writeError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	userID, err := strconv.Atoi(userIDstr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
 
 	// 3. Извлечь ID комментария из URL
 	idStr := extractIDFromPath(r.URL.Path, "/api/comments/")
-	id, err := strconv.Atoi(idStr)
+	commentID, err := strconv.Atoi(idStr)
 	if err != nil {
 		writeError(w, "Invalid comment ID", http.StatusBadRequest)
 		return
 	}
 
 	// 4. Декодировать тело запроса
-	var req model.CommentUpdateequest
+	var req model.CommentUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// 5. Обновить комментарий через сервис
-	// Преобразуем userID из string в int
-	userID, err := strconv.Atoi(idStr)
-	if err != nil {
-		// Обработка ошибки, если преобразование не удалось
-		http.Error(w, "Invalid comment ID", http.StatusBadRequest)
-		return
-	}
-	comment, err := h.commentService.Update(r.Context(), id, userID, &req)
+	comment, err := h.commentService.Update(r.Context(), commentID, userID, &req)
 	if err != nil {
 		switch err {
 		case service.ErrCommentNotFound:
@@ -252,8 +254,6 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(comment)
-
-	//http.Error(w, "Not implemented", http.Status)
 }
 
 // writeError отправляет ошибку в формате JSON

@@ -48,7 +48,7 @@ func (h *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Получение userID из контекста
-	userID, ok := getUserIDFromContext(r.Context())
+	userIDstr, ok := getUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -62,6 +62,11 @@ func (h *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Создание поста через postService.Create
+	userID, err := strconv.Atoi(userIDstr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 	post, err := h.postService.Create(r.Context(), userID, &req)
 	if err != nil {
 		http.Error(w, "Failed to create post", http.StatusInternalServerError)
@@ -189,6 +194,8 @@ func (h *PostHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to fetch posts", http.StatusInternalServerError)
 		return
 	}
+	if posts == nil {
+	}
 
 	// 4. Создаем ответ с метаданными пагинации
 	response := struct {
@@ -197,10 +204,10 @@ func (h *PostHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		Limit      int          `json:"limit"`
 		Offset     int          `json:"offset"`
 	}{
-		[]model.Post: posts,
-		TotalCount:   total,
-		Limit:        limit,
-		Offset:       offset,
+		//		Items:      posts, todo:
+		TotalCount: total,
+		Limit:      limit,
+		Offset:     offset,
 	}
 
 	// 5. Отправляем ответ
@@ -232,9 +239,14 @@ func (h *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Получаем userID из контекста (только авторы могут обновлять)
-	userID, ok := getUserIDFromContext(r.Context())
+	userIDstr, ok := getUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	userID, err := strconv.Atoi(userIDstr)
+	if err != nil {
+		http.Error(w, "Invalid User ID", http.StatusBadRequest)
 		return
 	}
 
@@ -262,7 +274,7 @@ func (h *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 5. Обновляем через postService.Update
-	updatedPost, err := h.postService.Update(r.Context(), userID, postID, &req)
+	updatedPost, err := h.postService.Update(r.Context(), postID, userID, &req)
 	if err != nil {
 		if errors.Is(err, service.ErrPostNotFound) {
 			http.Error(w, "Post Not Found", http.StatusNotFound)
@@ -303,24 +315,35 @@ func (h *PostHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Получение userID из контекста
-	userID, ok := getUserIDFromContext(r.Context())
+	userIDstr, ok := getUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	userID, err := strconv.Atoi(userIDstr)
+	if err != nil {
+		http.Error(w, "Invalid User ID", http.StatusBadRequest)
+		return
+	}
 
 	// 3. Извлечение ID поста из URL
-	vars := mux.Vars(r)
-	idStr, exists := vars["id"]
-	if !exists {
-		http.Error(w, "Bad Request: missing post ID", http.StatusBadRequest)
+	//vars := mux.Vars(r)
+	//idStr, exists := vars["id"]
+	postIDStr := r.URL.Path[len("/api/posts/"):] // Извлечение ID поста из URL
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		http.Error(w, "Invalid Post ID", http.StatusBadRequest)
 		return
 	}
-	postID, err := strconv.Atoi(idStr)
-	if err != nil || postID <= 0 {
-		http.Error(w, "Invalid post ID", http.StatusBadRequest)
-		return
-	}
+	//	if !exists {
+	//		http.Error(w, "Bad Request: missing post ID", http.StatusBadRequest)
+	//		return
+	//	}
+	//	postID, err := strconv.Atoi(idStr)
+	//	if err != nil || postID <= 0 {
+	//		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+	//		return
+	//	}
 
 	// 4. Удаление поста через сервис
 	err = h.postService.Delete(r.Context(), postID, userID)
