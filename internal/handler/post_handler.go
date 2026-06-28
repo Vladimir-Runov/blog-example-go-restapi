@@ -1,8 +1,11 @@
 package handler
 
+// https://github.com/Vladimir-Runov/blog-example-go-restapi
+
 import (
 	"blog-api/internal/model"
 	"blog-api/internal/service"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -194,10 +197,10 @@ func (h *PostHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		Limit      int          `json:"limit"`
 		Offset     int          `json:"offset"`
 	}{
-		Items:      posts,
-		TotalCount: total,
-		Limit:      limit,
-		Offset:     offset,
+		[]model.Post: posts,
+		TotalCount:   total,
+		Limit:        limit,
+		Offset:       offset,
 	}
 
 	// 5. Отправляем ответ
@@ -221,6 +224,7 @@ func (h *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// 6. Обработать ошибки (404 для не найден, 403 для чужого поста)
 	// 7. Вернуть обновленный пост как JSON (200 OK)
 	// http.Error(w, "Not implemented", http.StatusNotImplemented)
+
 	// 1. Проверяем метод
 	if r.Method != http.MethodPut {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -235,33 +239,36 @@ func (h *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. Извлекаем ID поста из URL
-	vars := mux.Vars(r)
-	idStr, exists := vars["id"]
-	if !exists {
-		http.Error(w, "Bad Request: missing post ID", http.StatusBadRequest)
-		return
-	}
-	postID, err := strconv.Atoi(idStr)
-	if err != nil || postID <= 0 {
-		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+	//vars := mux.Vars(r)
+	//idStr, exists := vars["id"]
+	//if !exists {
+	//	http.Error(w, "Bad Request: missing post ID", http.StatusBadRequest)
+	//	return
+	//}
+	//postID, err := strconv.Atoi(idStr)
+	//if err != nil || postID <= 0 {
+	postIDStr := r.URL.Path[len("/api/posts/"):] // Извлечение ID поста из URL
+	postID, err := strconv.Atoi(postIDStr)
+	if err != nil {
+		http.Error(w, "Invalid Post ID", http.StatusBadRequest)
 		return
 	}
 
-	// 4. Декодируем тело в PostUpdateRequest
+	// 4. Декодируем JSON тело в PostUpdateRequest
 	var req model.PostUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	// 5. Обновляем пост через сервис
-	post, err := h.postService.Update(r.Context(), postID, userID, &req)
+	// 5. Обновляем через postService.Update
+	updatedPost, err := h.postService.Update(r.Context(), userID, postID, &req)
 	if err != nil {
-		if err == ErrPostNotFound {
-			http.Error(w, "Post not found", http.StatusNotFound)
+		if errors.Is(err, service.ErrPostNotFound) {
+			http.Error(w, "Post Not Found", http.StatusNotFound)
 			return
 		}
-		if err == ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}
@@ -269,11 +276,10 @@ func (h *PostHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 7. Отправляем обновленный пост
+	// 6. Возвращаем обновленный пост как JSON (200 OK)
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(post); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(updatedPost)
 }
 
 // Delete удаляет пост
@@ -367,4 +373,10 @@ func extractIDFromPath(path, prefix string) string {
 	// Можно дополнительно очистить строку (например, убрать слеши)
 	idPart = strings.Trim(idPart, "/")
 	return idPart
+}
+
+// getUserIDFromContext извлекает ID пользователя из контекста
+func getUserIDFromContext(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value("userID").(string) // Предполагается, что userID хранится как строка в контексте
+	return userID, ok
 }

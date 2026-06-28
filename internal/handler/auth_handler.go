@@ -6,28 +6,16 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
-// UserCreateRequest представляет тело запроса на регистрацию
-type UserCreateRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
-}
-
-// UserLoginRequest представляет тело запроса на вход
-type UserLoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type AuthHandler struct {
-	userService service.UserService
+	userService *service.UserService
 }
 
 func NewAuthHandler(userService *service.UserService) *AuthHandler {
 	return &AuthHandler{
-		userService: *userService,
+		userService: userService,
 	}
 }
 
@@ -50,18 +38,30 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Декодировать JSON тело в UserCreateRequest
-	var req UserCreateRequest
+	var req model.UserCreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
-	// 3. Вызвать userService.Register
-	token, err := h.userService.Register(req.Username, req.Password, req.Email)
+	ctx := context.Background() // Создаем новый контекст
+	user := &model.User{
+		Username: req.Username,
+		Password: req.Password, // Не забудьте хешировать пароль в методе Register
+		Email:    req.Email,
+	}
 
-	// 4. Обработать ошибки
+	userCreateRequest := &model.UserCreateRequest{
+		Username: user.Username,
+		Password: user.Password, // Если вы уже хешируете пароль, то используйте хешированный пароль
+		Email:    user.Email,
+	}
+	// 3. Вызвать userService.Register
+	//func (s *UserService) Register(ctx context.Context, req *model.UserCreateRequest) (*model.TokenResponse, error) {
+	//func (s *UserService) Register(ctx context.Context, req *model.UserCreateRequest) (*model.TokenResponse, error) {
+	tokenResp, err := h.userService.Register(ctx, userCreateRequest)
 	if err != nil {
-		if err == service.ErrUserAlreadyExists {
+		if err == model.ErrUserAlreadyExists {
 			http.Error(w, "User already exists", http.StatusConflict)
 			return
 		}
@@ -71,7 +71,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	// 5. Вернуть JSON ответ с токеном (201 Created)
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	json.NewEncoder(w).Encode(map[string]string{"token": tokenResp.Token})
 
 	//	response := map[string]string{"token": token}
 	//	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -100,18 +100,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Декодировать JSON тело в UserLoginRequest
-	var req UserLoginRequest
+	ctx := context.Background() // Создаем новый контекст
+	var req model.UserLoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
 	// 3. Вызвать userService.Login
-	token, err := h.userService.Login(req.Username, req.Password)
+	//func (s *UserService) Login(ctx context.Context, req *model.UserLoginRequest) (*model.TokenResponse, error) {
+	tokenResp, err := h.userService.Login(ctx, &req)
 
 	// 4. Обработать ошибки
 	if err != nil {
-		if err == services.ErrInvalidCredentials {
+		if err == service.ErrInvalidCredentials {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -121,7 +123,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// 5. Вернуть JSON ответ с токеном (200 OK)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	json.NewEncoder(w).Encode(map[string]string{"token": tokenResp.Token})
 }
 
 // GetProfile возвращает профиль текущего пользователя (опционально)
@@ -131,13 +133,20 @@ func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	// Этот эндпоинт не обязателен для базовой реализации
 	// http.Error(w, "Not implemented", http.StatusNotImplemented)
 
-	userID, ok := getUserIDFromContext(r.Context())
+	userIDStr, ok := getUserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+	// Преобразуем userID из string в int
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		// Обработка ошибки, если преобразование не удалось
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 
-	user, err := h.userRepo.GetUserByID(r.Context(), userID)
+	user, err := h.userService.GetByID(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch user profile", http.StatusInternalServerError)
 		return
@@ -162,23 +171,6 @@ func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// writeError отправляет JSON ответ с ошибкой
-func writeError(w http.ResponseWriter, message string, statusCode int) {
-	// TODO: Реализовать отправку ошибки в формате JSON
-	// Создать структуру ErrorResponse и отправить как JSON
-	//http.Error(w, message, statusCode)
-
-	//w.Header().Set("Content-Type", "application/json")
-	//w.WriteHeader(statusCode)
-	//json.NewEncoder(w).Encode(ErrorResponse{Message: message})
-	response := map[string]any{
-		"error":   message,
-		"status":  statusCode,
-		"message": message,
-	}
-	WriteJSON(w, response, statusCode)
-}
-
 func WriteJSON(w http.ResponseWriter, data interface{}, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -190,19 +182,36 @@ func WriteJSON(w http.ResponseWriter, data interface{}, statusCode int) {
 }
 
 // getUserIDFromContext извлекает ID пользователя из контекста
-func getUserIDFromContext(ctx context.Context) (int, bool) {
-	// TODO: Извлечь userID из контекста
-	// Ключ устанавливается в auth middleware
-	// return 0, false
-	const userIDKey = "userID"
+//func getUserIDFromContext(ctx context.Context) (int, bool) {
+//	// TODO: Извлечь userID из контекста
+//	// Ключ устанавливается в auth middleware
+//	// return 0, false
+//	const userIDKey = "userID"
+//
+//	// Получаем значение из контекста
+//	val := ctx.Value(userIDKey)
+//	if val == nil {
+//		return 0, false
+//	}
+//
+//	// Приводим к типу int, проверяем
+//	userID, ok := val.(int)
+//	return userID, ok
+//}
 
-	// Получаем значение из контекста
-	val := ctx.Value(userIDKey)
-	if val == nil {
-		return 0, false
-	}
-
-	// Приводим к типу int, проверяем
-	userID, ok := val.(int)
-	return userID, ok
-}
+// writeError отправляет JSON ответ с ошибкой
+//func writeError(w http.ResponseWriter, message string, statusCode int) {
+//	// TODO: Реализовать отправку ошибки в формате JSON
+//	// Создать структуру ErrorResponse и отправить как JSON
+//	//http.Error(w, message, statusCode)
+//
+//	//w.Header().Set("Content-Type", "application/json")
+//	//w.WriteHeader(statusCode)
+//	//json.NewEncoder(w).Encode(ErrorResponse{Message: message})
+//	response := map[string]any{
+//		"error":   message,
+//		"status":  statusCode,
+//		"message": message,
+//	}
+//	WriteJSON(w, response, statusCode)
+//}

@@ -22,7 +22,7 @@ const (
 
 // AuthMiddleware provides JWT authentication
 type AuthMiddleware struct {
-	jwtManager *auth.JWTManager
+	jwt *auth.JWTManager
 }
 
 // NewAuthMiddleware creates a new auth middleware instance

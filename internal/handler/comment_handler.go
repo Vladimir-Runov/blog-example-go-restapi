@@ -33,7 +33,7 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Получить ID пользователя из контекста
-	userID, ok := getUserIDFromContext(r.Context())
+	userIDStr, ok := getUserIDFromContext(r.Context())
 	if !ok {
 		writeError(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -47,6 +47,13 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Создать комментарий через сервис
+	// Преобразуем userID из string в int
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		// Обработка ошибки, если преобразование не удалось
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
 	comment, err := h.commentService.Create(r.Context(), userID, &req)
 	if err != nil {
 		switch err {
@@ -169,15 +176,7 @@ func (h *CommentHandler) GetByPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 5. Создать ответ с метаданными
-	type CommentsResponse struct {
-		Comments []*model.Comment `json:"comments"`
-		Total    int              `json:"total"`
-		Limit    int              `json:"limit"`
-		Offset   int              `json:"offset"`
-		PostID   int              `json:"post_id"`
-	}
-
-	resp := CommentsResponse{
+	resp := &model.CommentResponse{
 		Comments: comments,
 		Total:    total,
 		Limit:    limit,
@@ -222,13 +221,20 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Декодировать тело запроса
-	var req model.CommentUpdateRequest
+	var req model.CommentUpdateequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	// 5. Обновить комментарий через сервис
+	// Преобразуем userID из string в int
+	userID, err := strconv.Atoi(idStr)
+	if err != nil {
+		// Обработка ошибки, если преобразование не удалось
+		http.Error(w, "Invalid comment ID", http.StatusBadRequest)
+		return
+	}
 	comment, err := h.commentService.Update(r.Context(), id, userID, &req)
 	if err != nil {
 		switch err {
@@ -249,3 +255,24 @@ func (h *CommentHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	//http.Error(w, "Not implemented", http.Status)
 }
+
+// writeError отправляет ошибку в формате JSON
+func writeError(w http.ResponseWriter, message string, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	// Создаем объект ошибки
+	errorResponse := map[string]string{"error": message}
+
+	// Кодируем объект ошибки в JSON и отправляем его
+	if err := json.NewEncoder(w).Encode(errorResponse); err != nil {
+		// Если произошла ошибка при кодировании, можно записать ее в лог
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// getUserIDFromContext извлекает ID пользователя из контекста
+//func getUserIDFromContext(ctx context.Context) (string, bool) {
+//	userID, ok := ctx.Value("userID").(string) //
+//	return userID, ok
+//}
