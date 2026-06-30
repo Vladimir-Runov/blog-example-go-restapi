@@ -53,7 +53,7 @@ func main() {
 
 	// TODO: Инициализировать JWT менеджер
 	// - Создать jwtManager через auth.NewJWTManager
-	jwtManager := auth.NewJWTManager(cfg.JWTSecret, 24)
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiryHours)
 
 	// TODO: Создать слои приложения
 	// 1. Репозитории (передать db)

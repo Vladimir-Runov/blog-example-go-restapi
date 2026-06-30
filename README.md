@@ -249,3 +249,16 @@ curl -X POST http://localhost:8080/api/posts \
 3. Обратитесь к преподавателю
 
 Удачи в реализации! 🚀
+
+
+>docker-compose up -d
+time="2026-06-30T23:34:24+03:00" level=warning msg="C:\\Users\\Admin\\Documents\\go\\git_netology\\blog-example-go-restapi\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+[+] up 2/2
+ ✔ Container blog_postgres Running                                                                                  0.0s
+ ✔ Container blog_adminer  Running                                                                                  0.0s
+
+>docker-compose ps
+time="2026-06-30T23:35:01+03:00" level=warning msg="C:\\Users\\Admin\\Documents\\go\\git_netology\\blog-example-go-restapi\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+NAME            IMAGE                COMMAND                  SERVICE    CREATED         STATUS                   PORTS
+blog_adminer    adminer:latest       "entrypoint.sh docke…"   adminer    9 minutes ago   Up 9 minutes             0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp
+blog_postgres   postgres:15-alpine   "docker-entrypoint.s…"   postgres   9 minutes ago   Up 9 minutes (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
