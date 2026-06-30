@@ -43,9 +43,6 @@ func (m *AuthMiddleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		// 4. Добавить данные пользователя в контекст (UserIDKey, UserEmailKey, UserNameKey)
 		// 5. Передать управление следующему handler
 
-		// Временная заглушка - удалить после реализации
-		//http.Error(w, "Authentication not implemented", http.StatusNotImplemented)
-
 		// 1. Извлечь токен из заголовка Authorization
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -65,15 +62,15 @@ func (m *AuthMiddleware) RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		claims, err := m.jwtManager.ValidateToken(tokenString)
 		if err != nil {
 			// 3. Обработать ошибки валидации
-			//			switch (type) {
-			//				case *jwt.ValidationError:
-			//					if err.(*jwt.ValidationError).Errors&jwt.ValidationErrorExpired != 0 {
-			//						http.Error(w, "Token has expired", http.StatusUnauthorized)
-			//					} else {
-			//						http.Error(w, "Invalid token", http.StatusUnauthorized)
-			//					}
-			//				default:
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			//if vErr, ok := err.(*jwt.ValidationError); ok {
+			//				if vErr.Errors & jwt.ValidationErrorExpired != 0 {
+			//					http.Error(w, "Token has expired", http.StatusUnauthorized)
+			//				} else {
+			//					http.Error(w, "Invalid token", http.StatusUnauthorized)
+			//				}
+			//			} else {
+			//				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			//			}
 			return
 		}
@@ -202,7 +199,7 @@ func writeJSONError(w http.ResponseWriter, message string, statusCode int) {
 	// Сериализуем объект в JSON и отправляем его
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		// Если произошла ошибка при кодировании, отправляем стандартную ошибку
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error (22)", http.StatusInternalServerError)
 	}
 }
 

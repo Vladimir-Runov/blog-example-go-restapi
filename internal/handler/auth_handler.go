@@ -5,6 +5,8 @@ import (
 	"blog-example-go-restapi/internal/service"
 	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -31,6 +33,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// 5. Вернуть JSON ответ с токеном (201 Created)
 
 	//http.Error(w, "Not implemented", http.StatusNotImplemented)
+
 	// 1. Проверить метод запроса (должен быть POST)
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -65,7 +68,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "User already exists", http.StatusConflict)
 			return
 		}
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Internal server error (7)", http.StatusInternalServerError)
 		return
 	}
 
@@ -117,7 +120,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//http.Error(w, "Internal server error (3)", http.StatusInternalServerError)
+		log.Printf("Error validating token: %v", err)
+		// Отправляем клиенту сообщение об ошибке с описанием
+		http.Error(w, fmt.Sprintf("Internal server error: %v", err.Error()), http.StatusInternalServerError)
 		return
 	}
 

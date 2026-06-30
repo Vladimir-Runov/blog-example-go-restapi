@@ -82,6 +82,8 @@ func main() {
 
 	// TODO: Настроить маршруты
 	// Публичные эндпоинты:
+
+	// curl -X POST http://localhost:8080/api/register -H "Content-Type: application/json" -d "{\"username\": \"tester_001\", \"password\": \"tester_pass123\", \"email\": \"tester_001@example.com\"}"
 	router.Post("/api/register", userHandler.Register) // - POST /api/register
 	router.Post("/api/login", userHandler.Login)       // - POST /api/login
 	// - GET /api/posts
@@ -103,7 +105,7 @@ func main() {
 
 	// TODO: Запустить HTTP сервер
 	// - Сформировать адрес из конфигурации
-	addr := fmt.Sprintf("%s:%d", cfg.DBHost, cfg.DBPort)
+	addr := fmt.Sprintf("%s:%d", cfg.ServerHost, cfg.ServerPort)
 
 	// - Вывести информацию о запуске
 	log.Printf("Starting server on %s...", addr)
