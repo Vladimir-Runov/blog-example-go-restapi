@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"blog-api/pkg/auth"
+	"blog-example-go-restapi/pkg/auth"
 	"context"
 	"encoding/json"
 	"net/http"

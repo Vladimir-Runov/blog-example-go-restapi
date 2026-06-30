@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"blog-api/internal/model"
+	"blog-example-go-restapi/internal/model"
 	"context"
 	"database/sql"
 	"errors"

@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"blog-api/internal/model"
-	"blog-api/internal/service"
+	"blog-example-go-restapi/internal/model"
+	"blog-example-go-restapi/internal/service"
 	"context"
 	"encoding/json"
 	"net/http"

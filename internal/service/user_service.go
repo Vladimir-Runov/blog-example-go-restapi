@@ -1,9 +1,9 @@
 package service
 
 import (
-	"blog-api/internal/model"
-	"blog-api/internal/repository"
-	"blog-api/pkg/auth"
+	"blog-example-go-restapi/internal/model"
+	"blog-example-go-restapi/internal/repository"
+	"blog-example-go-restapi/pkg/auth"
 	"context"
 	"database/sql"
 	"errors"

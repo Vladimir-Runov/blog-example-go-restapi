@@ -3,8 +3,8 @@ package handler
 // https://github.com/Vladimir-Runov/blog-example-go-restapi
 
 import (
-	"blog-api/internal/model"
-	"blog-api/internal/service"
+	"blog-example-go-restapi/internal/model"
+	"blog-example-go-restapi/internal/service"
 	"context"
 	"encoding/json"
 	"errors"

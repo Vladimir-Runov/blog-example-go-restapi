@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"blog-api/internal/model"
+	"blog-example-go-restapi/internal/model"
 	"context"
 	"database/sql"
 	"errors"
@@ -233,6 +233,23 @@ func (r *PostRepo) Exists(ctx context.Context, id int) (bool, error) {
 	}
 
 	return exists, nil // Возвращаем результат проверки
+}
+
+// GetTotalCount получает общее количество постов автора
+func (r *PostRepo) CountByAuthorID(ctx context.Context, authorID int) (int, error) {
+	// TODO: Реализовать подсчет  количества постов автора
+	// HINT: Используйте SELECT COUNT(*) FROM posts
+
+	query := `SELECT COUNT(*) FROM posts WHERE author_id = $1`
+
+	var count int
+	// TODO: Выполнить запрос и получить количество
+	err := r.db.QueryRowContext(ctx, query, authorID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get total count of posts by Author: %w", err) // Обработка ошибки
+	}
+
+	return count, nil // Возвращаем общее количество постов
 }
 
 // GetByAuthorID получает посты определенного автора

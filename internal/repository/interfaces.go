@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"blog-api/internal/model"
+	"blog-example-go-restapi/internal/model"
 	"context"
 )
 
@@ -54,6 +54,8 @@ type PostRepository interface {
 	Exists(ctx context.Context, id int) (bool, error)
 
 	// TODO: Добавить методы для получения постов конкретного автора
+	GetByAuthorID(ctx context.Context, authorID int, limit, offset int) ([]*model.Post, error)
+	CountByAuthorID(ctx context.Context, authorID int) (int, error)
 }
 
 // CommentRepository определяет интерфейс для работы с комментариями

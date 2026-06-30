@@ -1,8 +1,8 @@
 package service
 
 import (
-	"blog-api/internal/model"
-	"blog-api/internal/repository"
+	"blog-example-go-restapi/internal/model"
+	"blog-example-go-restapi/internal/repository"
 	"context"
 	"errors"
 	"fmt"
