@@ -34,7 +34,11 @@ func main() {
 		User:     cfg.DBUser,
 		Password: cfg.DBPassword,
 		DBName:   cfg.DBName,
+		SSLMode:  cfg.DBSSLMode,
 	}
+
+	log.Printf("%v", dbConfig)
+	//connStr := "host=localhost port=5433 user=bloguser password=blogpassword dbname=blogdb sslmode=disable"
 
 	// - Вызвать database.NewPostgresDB
 	// - Обработать ошибки подключения
