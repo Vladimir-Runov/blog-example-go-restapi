@@ -3,6 +3,7 @@ package service
 import (
 	"blog-example-go-restapi/internal/model"
 	"blog-example-go-restapi/internal/repository"
+	"blog-example-go-restapi/pkg/auth"
 	"context"
 	"errors"
 	"fmt"
@@ -16,14 +17,16 @@ var (
 )
 
 type PostService struct {
-	postRepo repository.PostRepository
-	userRepo repository.UserRepository
+	postRepo   repository.PostRepository
+	userRepo   repository.UserRepository
+	jwtManager *auth.JWTManager
 }
 
-func NewPostService(postRepo repository.PostRepository, userRepo repository.UserRepository) *PostService {
+func NewPostService(postRepo repository.PostRepository, userRepo repository.UserRepository, jwtManager *auth.JWTManager) *PostService {
 	return &PostService{
-		postRepo: postRepo,
-		userRepo: userRepo,
+		postRepo:   postRepo,
+		userRepo:   userRepo,
+		jwtManager: jwtManager,
 	}
 }
 

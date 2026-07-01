@@ -198,19 +198,19 @@ docker-compose logs -f   # Логи
 
 # Примеры запросов
 # Регистрация
-curl -X POST http://localhost:8080/api/register \\\\\\\\
-  -H "Content-Type: application/json" \\\\\\\\
+curl -X POST http://localhost:8080/api/register \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  -H "Content-Type: application/json" \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
   -d '{"username":"testuser","email":"test@example.com","password":"password123"}'
 
 # Вход
-curl -X POST http://localhost:8080/api/login \\\\\\\\
-  -H "Content-Type: application/json" \\\\\\\\
+curl -X POST http://localhost:8080/api/login \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  -H "Content-Type: application/json" \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
   -d '{"email":"test@example.com","password":"password123"}'
 
 # Создание поста (с токеном)
-curl -X POST http://localhost:8080/api/posts \\\\\\\\
-  -H "Authorization: Bearer YOUR\\\\\\\_TOKEN" \\\\\\\\
-  -H "Content-Type: application/json" \\\\\\\\
+curl -X POST http://localhost:8080/api/posts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  -H "Authorization: Bearer YOUR\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\_TOKEN" \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  -H "Content-Type: application/json" \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
   -d '{"title":"My Post","content":"Post content"}'
 ```
 
@@ -276,8 +276,8 @@ curl -X POST http://localhost:8080/api/posts \\\\\\\\
 docker-compose up -d
 time="2026-06-30T23:34:24+03:00" level=warning msg="C:\\\\\\\\\\\\\\\\Users\\\\\\\\\\\\\\\\Admin\\\\\\\\\\\\\\\\Documents\\\\\\\\\\\\\\\\go\\\\\\\\\\\\\\\\git\\\\\\\_netology\\\\\\\\\\\\\\\\blog-example-go-restapi\\\\\\\\\\\\\\\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
 \\\\\\\[+] up 2/2
- ✔ Container blog\\\\\\\_postgres Running                                                                                  0.0s
- ✔ Container blog\\\\\\\_adminer  Running                                                                                  0.0s
+✔ Container blog\\\\\\\_postgres Running                                                                                  0.0s
+✔ Container blog\\\\\\\_adminer  Running                                                                                  0.0s
 
 
 
@@ -302,6 +302,54 @@ curl -X POST http://localhost:8080/api/register -H "Content-Type: application/js
 curl -X POST http://localhost:8080/api/login -H "Content-Type: application/json" -d "{\\"email\\": \\"tester\_001@example.com\\", \\"password\\": \\"tester\_pass123\\"}"
 
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InRlc3Rlcl8wMDFAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3Rlcl8wMDEiLCJleHAiOjE3ODI5NDM0OTYsImlhdCI6MTc4Mjg1NzA5Nn0.jdB3xKSRTAT8dy3MMrb3Zs8-2v42u78-KO37mLk-2k8"}
+
+
+
+
+
+
+
+C:\\Users\\Admin\\Documents\\go\\git\_netology\\blog-example-go-restapi>docker exec -it blog\_postgres bash
+
+98c4dfdef89a:/#  psql -U bloguser -d blogdb\_test
+
+psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  database "blogdb\_test" does not exist
+
+98c4dfdef89a:/# CREATE DATABASE blogdb\_test;
+
+bash: CREATE: command not found
+
+98c4dfdef89a:/# psql -U bloguser -d postgres
+
+psql (15.18)
+
+Type "help" for help.
+
+
+
+postgres=# CREATE DATABASE blogdb\_test;
+
+CREATE DATABASE
+
+postgres=#    \\l
+
+&#x20;                                                List of databases
+
+&#x20;   Name     |  Owner   | Encoding |  Collate   |   Ctype    | ICU Locale | Locale Provider |   Access privileges
+
+\-------------+----------+----------+------------+------------+------------+-----------------+-----------------------
+
+&#x20;blogdb      | bloguser | UTF8     | en\_US.utf8 | en\_US.utf8 |            | libc            |
+
+&#x20;blogdb\_test | bloguser | UTF8     | en\_US.utf8 | en\_US.utf8 |            | libc            |
+
+
+
+
+
+go.exe test -test.fullpath=true -timeout 30s -run ^TestAuthHandler\_Register$ blog-example-go-restapi/internal/handler
+
+ok  	blog-example-go-restapi/internal/handler	1.173s
 
 
 

@@ -62,12 +62,15 @@ func main() {
 	// TODO: Создать слои приложения
 	// 1. Репозитории (передать db)
 	userRepo := repository.NewUserRepo(db)
+	postRepo := repository.NewPostRepo(db)
 
 	// 2. Сервисы (передать репозитории и jwtManager)
 	userService := service.NewUserService(userRepo, jwtManager)
+	postService := service.NewPostService(postRepo, userRepo, jwtManager)
 
 	// 3. Хендлеры (передать сервисы)
 	userHandler := handler.NewAuthHandler(userService)
+	postHandler := handler.NewPostHandler(postService)
 
 	// 4. Middleware (передать необходимые зависимости)
 
@@ -86,15 +89,20 @@ func main() {
 	// curl -X POST http://localhost:8080/api/register -H "Content-Type: application/json" -d "{\"username\": \"tester_001\", \"password\": \"tester_pass123\", \"email\": \"tester_001@example.com\"}"
 	router.Post("/api/register", userHandler.Register) // - POST /api/register
 	router.Post("/api/login", userHandler.Login)       // - POST /api/login
-	// - GET /api/posts
-	// - GET /api/posts/{id}
-	// - GET /api/posts/{id}/comments
+	// Эндпоинты для работы с постами
+	router.Get("/api/posts", postHandler.GetAll)       // - GET /api/posts
+	router.Get("/api/posts/{id}", postHandler.GetByID) // - GET /api/posts/{id}
+
+	// Эндпоинты для работы с комментариями поста
+	//	router.Post("/api/posts/{id}/comments", .  )    // - GET /api/posts/{id}/comments
+
 	//
 	// Защищенные эндпоинты (требуют JWT):
-	// - POST /api/posts
-	// - PUT /api/posts/{id}
-	// - DELETE /api/posts/{id}
-	// - POST /api/posts/{id}/comments
+	router.Post("/api/posts", postHandler.Create)        // - POST /api/posts (требует JWT)
+	router.Put("/api/posts/{id}", postHandler.Update)    // - PUT /api/posts/{id} (требует JWT)
+	router.Delete("/api/posts/{id}", postHandler.Delete) // - DELETE /api/posts/{id} (требует JWT)
+
+	//	router.Post("/api/posts/{id}/comments", postHandler.CreateComment) // - POST /api/posts/{id}/comments (требует JWT)
 
 	// Health check эндпоинт
 	router.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {

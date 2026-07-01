@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -50,7 +51,7 @@ func (h *PostHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// 2. Получение userID из контекста
 	userIDstr, ok := getUserIDFromContext(r.Context())
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "Unauthorized (1)", http.StatusUnauthorized)
 		return
 	}
 
@@ -400,6 +401,7 @@ func extractIDFromPath(path, prefix string) string {
 
 // getUserIDFromContext извлекает ID пользователя из контекста
 func getUserIDFromContext(ctx context.Context) (string, bool) {
+	log.Printf("getUserIDFromContext: ctx = %+v userID: %s", ctx, ctx.Value("userID"))
 	userID, ok := ctx.Value("userID").(string) // Предполагается, что userID хранится как строка в контексте
 	return userID, ok
 }
